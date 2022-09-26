@@ -1,5 +1,28 @@
 import psycopg2
+import logging
 
+class DataAccessObject:
+    def __init__(self, host, database, user, password, port):
+        self.host = host
+        self.database = database
+        self.user = user
+        self.password = password
+        self.port = port
+        self.connection = psycopg2.connect(host=self.host,
+                database=self.database,
+                user=self.user,
+                password=self.password,
+                port=self.port)
+
+    def __enter__(self):
+        logging.info("Calling __enter__")
+        return self.connection.cursor()
+
+    def __exit__(self, error: Exception, value: object, traceback: object):
+        logging.info("Calling __exit__")
+        self.connection.commit()
+        self.connection.close()
+"""
 class DataAccessObject:
     def __init__(self, host, database, user, password, port):
         self.host = host
@@ -52,13 +75,30 @@ class DataAccessObject:
         print("Table entries inserted")
         self.closing_connection()
 
-
+"""
 
 def db_ucheck(a1,a2):
     # Get db connection
+    with DataAccessObject("localhost","postgres","postgres","9246743691",5432) as cursor:
     # cursor ojbect
     # select query
+        cursor.execute("SELECT * FROM employee WHERE eid={} AND userid='{}'".format(a1,a2))
+        data = cursor.fetchone()
+        print(data)
+    return bool(data)
     # if records == 0: return False
     # else return True
-    pass
 
+def db_insert(*args):
+    firstname, lastname, eid, userid, password, mobileno, emailid, dob, address, gender, doj, technology = args
+    record = (firstname, lastname, eid, userid, password, mobileno, emailid, dob, address, gender, doj, technology) 
+    query = "INSERT INTO employee VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+
+    with DataAccessObject("localhost","postgres","postgres","9246743691",5432) as cursor:
+        cursor.execute(query,record)
+
+    return f"{firstname} {lastname} user created successfully."
+
+
+if __name__ == "__main__":
+    db_ucheck(1, "sindhu2")    
